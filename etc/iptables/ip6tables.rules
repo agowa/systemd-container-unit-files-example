@@ -7,24 +7,20 @@
 :LOGACCEPT - [0:0]
 :LOGREJECT - [0:0]
 -A INPUT -p tcp -m tcp --dport 22 -j LOGACCEPT
--A INPUT -p tcp -m multiport --sports 80,443 -m state --state ESTABLISHED -m comment --comment Download -j 
-LOGACCEPT
+-A INPUT -p tcp -m multiport --sports 80,443 -m state --state ESTABLISHED -m comment --comment Download -j LOGACCEPT
 -A INPUT -i lo -m comment --comment "Allow loopback" -j LOGACCEPT
 -A INPUT -p udp -m udp --sport 53 -m comment --comment "Allow DNS request from this server" -j LOGACCEPT
 -A INPUT -p tcp -m tcp --sport 53 -m comment --comment "Allow DNS request from this server" -j LOGACCEPT
--A INPUT -p ipv6-icmp -m comment --comment "Allow Ping, Packet to big and so on" -m limit --limit 500/sec 
---limit-burst 300 -j LOGACCEPT
+-A INPUT -p ipv6-icmp -m comment --comment "Allow Ping, Packet to big and so on" -m limit --limit 500/sec --limit-burst 300 -j LOGACCEPT
 
 -A FORWARD -p ipv6-icmp -m comment --comment "Allow Ping, Packet to big and so on" -j LOGACCEPT
 
 -A OUTPUT -p tcp -m tcp --sport 22 -m state --state ESTABLISHED -m comment --comment "SSH Server" -j LOGACCEPT
--A OUTPUT -p tcp -m multiport --dports 80,443 -m state --state NEW,ESTABLISHED -m comment --comment Download -j 
-LOGACCEPT
+-A OUTPUT -p tcp -m multiport --dports 80,443 -m state --state NEW,ESTABLISHED -m comment --comment Download -j LOGACCEPT
 -A OUTPUT -o lo -m comment --comment "Allow loopback" -j LOGACCEPT
 -A OUTPUT -p udp -m udp --dport 53 -m comment --comment "Allow DNS request from this server" -j LOGACCEPT
 -A OUTPUT -p tcp -m tcp --dport 53 -m comment --comment "Allow DNS request from this server" -j LOGACCEPT
--A OUTPUT -p ipv6-icmp -m comment --comment "Allow Ping, Packet to big and so on" -m limit --limit 500/sec 
---limit-burst 300 -j LOGACCEPT
+-A OUTPUT -p ipv6-icmp -m comment --comment "Allow Ping, Packet to big and so on" -m limit --limit 500/sec --limit-burst 300 -j LOGACCEPT
 
 -A INPUT -j LOGDROP
 -A FORWARD -j LOGDROP
@@ -57,37 +53,21 @@ COMMIT
 :OUTPUT ACCEPT [0:0]
 :POSTROUTING ACCEPT [0:0]
 -A PREROUTING -m conntrack --ctstate INVALID -m comment --comment "Drop invalid packets" -j DROP
--A PREROUTING -p tcp -m tcp ! --tcp-flags FIN,SYN,RST,ACK SYN -m conntrack --ctstate NEW -m comment --comment 
-"Drop TCP packets that are new and are not SYN" -j DROP
--A PREROUTING -p tcp -m conntrack --ctstate NEW -m tcpmss ! --mss 536:65535 -m comment --comment "Drop SYN 
-packets with suspicious MSS value" -j DROP
--A PREROUTING -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG NONE -m comment --comment "Block packets with 
-bogus TCP flags" -j DROP
--A PREROUTING -p tcp -m tcp --tcp-flags FIN,SYN FIN,SYN -m comment --comment "Block packets with bogus TCP 
-flags" -j DROP
--A PREROUTING -p tcp -m tcp --tcp-flags SYN,RST SYN,RST -m comment --comment "Block packets with bogus TCP 
-flags" -j DROP
--A PREROUTING -p tcp -m tcp --tcp-flags FIN,SYN FIN,SYN -m comment --comment "Block packets with bogus TCP 
-flags" -j DROP
--A PREROUTING -p tcp -m tcp --tcp-flags FIN,RST FIN,RST -m comment --comment "Block packets with bogus TCP 
-flags" -j DROP
--A PREROUTING -p tcp -m tcp --tcp-flags FIN,ACK FIN -m comment --comment "Block packets with bogus TCP flags" -j 
-DROP
--A PREROUTING -p tcp -m tcp --tcp-flags ACK,URG URG -m comment --comment "Block packets with bogus TCP flags" -j 
-DROP
--A PREROUTING -p tcp -m tcp --tcp-flags FIN,ACK FIN -m comment --comment "Block packets with bogus TCP flags" -j 
-DROP
--A PREROUTING -p tcp -m tcp --tcp-flags PSH,ACK PSH -m comment --comment "Block packets with bogus TCP flags" -j 
-DROP
--A PREROUTING -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG FIN,SYN,RST,PSH,ACK,URG -m comment --comment 
-"Block packets with bogus TCP flags" -j DROP
--A PREROUTING -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG NONE -m comment --comment "Block packets with 
-bogus TCP flags" -j DROP
--A PREROUTING -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG FIN,PSH,URG -m comment --comment "Block packets 
-with bogus TCP flags" -j DROP
--A PREROUTING -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG FIN,SYN,PSH,URG -m comment --comment "Block 
-packets with bogus TCP flags" -j DROP
--A PREROUTING -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG FIN,SYN,RST,ACK,URG -m comment --comment "Block 
-packets with bogus TCP flags" -j DROP
+-A PREROUTING -p tcp -m tcp ! --tcp-flags FIN,SYN,RST,ACK SYN -m conntrack --ctstate NEW -m comment --comment "Drop TCP packets that are new and are not SYN" -j DROP
+-A PREROUTING -p tcp -m conntrack --ctstate NEW -m tcpmss ! --mss 536:65535 -m comment --comment "Drop SYN packets with suspicious MSS value" -j DROP
+-A PREROUTING -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG NONE -m comment --comment "Block packets with bogus TCP flags" -j DROP
+-A PREROUTING -p tcp -m tcp --tcp-flags FIN,SYN FIN,SYN -m comment --comment "Block packets with bogus TCP flags" -j DROP
+-A PREROUTING -p tcp -m tcp --tcp-flags SYN,RST SYN,RST -m comment --comment "Block packets with bogus TCP flags" -j DROP
+-A PREROUTING -p tcp -m tcp --tcp-flags FIN,SYN FIN,SYN -m comment --comment "Block packets with bogus TCP flags" -j DROP
+-A PREROUTING -p tcp -m tcp --tcp-flags FIN,RST FIN,RST -m comment --comment "Block packets with bogus TCP flags" -j DROP
+-A PREROUTING -p tcp -m tcp --tcp-flags FIN,ACK FIN -m comment --comment "Block packets with bogus TCP flags" -j DROP
+-A PREROUTING -p tcp -m tcp --tcp-flags ACK,URG URG -m comment --comment "Block packets with bogus TCP flags" -j DROP
+-A PREROUTING -p tcp -m tcp --tcp-flags FIN,ACK FIN -m comment --comment "Block packets with bogus TCP flags" -j DROP
+-A PREROUTING -p tcp -m tcp --tcp-flags PSH,ACK PSH -m comment --comment "Block packets with bogus TCP flags" -j DROP
+-A PREROUTING -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG FIN,SYN,RST,PSH,ACK,URG -m comment --comment "Block packets with bogus TCP flags" -j DROP
+-A PREROUTING -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG NONE -m comment --comment "Block packets with bogus TCP flags" -j DROP
+-A PREROUTING -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG FIN,PSH,URG -m comment --comment "Block packets with bogus TCP flags" -j DROP
+-A PREROUTING -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG FIN,SYN,PSH,URG -m comment --comment "Block packets with bogus TCP flags" -j DROP
+-A PREROUTING -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG FIN,SYN,RST,ACK,URG -m comment --comment "Block packets with bogus TCP flags" -j DROP
 COMMIT
 # Completed on Sun Jan 15 20:14:20 2017
