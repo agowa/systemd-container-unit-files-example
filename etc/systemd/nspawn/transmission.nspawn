@@ -1,0 +1,13 @@
+[Exec]
+Boot=yes
+
+[Network]
+Port=tcp:6881:6881
+Port=udp:6881:6881
+Port=udp:7881:7881
+Port=tcp:8080:8080
+Port=tcp:9091:9091
+#Port=tcp:22020:22
+
+[Files]
+Bind=/etc/transmission-daemon
