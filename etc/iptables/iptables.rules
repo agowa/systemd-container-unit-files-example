@@ -6,7 +6,8 @@
 :OUTPUT ACCEPT [0:0]
 :POSTROUTING ACCEPT [0:0]
 -A PREROUTING -m conntrack --ctstate INVALID -m comment --comment "Drop invalid packets" -j DROP
--A PREROUTING -p tcp -m tcp --dport 22 -j DROP -m comment --comment "DROP Default SSH Port as early as possible"
+# Uncomment if you dont have a gitlabserver and your ssh server is running on port 2222
+#-A PREROUTING -p tcp -m tcp --dport 22 -j DROP -m comment --comment "DROP Default SSH Port as early as possible"
 -A PREROUTING -p tcp -m tcp ! --tcp-flags FIN,SYN,RST,ACK SYN -m conntrack --ctstate NEW -m comment --comment "Drop TCP packets that are new and are not SYN" -j DROP
 -A PREROUTING -p tcp -m conntrack --ctstate NEW -m tcpmss ! --mss 536:65535 -m comment --comment "Drop SYN packets with suspicious MSS value" -j DROP
 -A PREROUTING -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG NONE -m comment --comment "Block packets with bogus TCP flags" -j DROP
@@ -55,14 +56,19 @@ COMMIT
 :LOGREJECT - [0:0]
 :INPUT DROP [0:0]
 -A INPUT -i ve-+ -p udp --dport 67:68 --sport 67:68 -m comment --comment "Allow DHCP-Requests from Containers" -j LOGACCEPT
--A INPUT -p tcp -m tcp -m state -m comment --dport 22 --state ESTABLISHED -j LOGACCEPT --comment "SSH Server"
--A INPUT -p udp -m udp -m state -m comment --sport 123 --state RELATED,ESTABLISHED -j LOGACCEPT --comment "ntp client"
+-A INPUT -p tcp -m tcp -m state -m comment --dport 2222 --state NEW,ESTABLISHED -j LOGACCEPT --comment "SSH Server"
+-A INPUT -p tcp -m tcp -m comment -m state --dport 22 --state NEW,ESTABLISHED -j LOGACCEPT --comment "GIT SSH Server"
+-A INPUT -p tcp -m tcp -m comment -m state --sport 25 --state ESTABLISHED -j LOGACCEPT --comment "Connect to remote SMTP Server"
+-A INPUT -p tcp -m tcp -m comment -m state --sport 22 --state ESTABLISHED -j LOGACCEPT --comment "Connect to remote SSH Server"
+-A INPUT -p udp -m udp -m state -m comment --sport 123 --state ESTABLISHED -j LOGACCEPT --comment "ntp client"
 -A INPUT -p tcp -m multiport -m state -m comment --state ESTABLISHED -j LOGACCEPT --sports 80,443 --comment Download
 -A INPUT -m comment -i lo -j LOGACCEPT --comment "Allow loopback"
 -A INPUT -p icmp -m icmp -m limit -m comment --icmp-type 8 -j LOGACCEPT --comment "Allow ping"
 -A INPUT -p icmp -m icmp --icmp-type 0 -j LOGACCEPT
 -A INPUT -p udp -m udp -m comment --sport 53 -j LOGACCEPT --comment "Allow DNS request from this server"
 -A INPUT -p tcp -m tcp -m comment --sport 53 -j LOGACCEPT --comment "Allow DNS request from this server"
+-A INPUT -p tcp -m tcp -m comment -m state --sport 21 --state ESTABLISHED -j LOGACCEPT --comment "Connect to remote FTP Server"
+-A INPUT -p tcp -m tcp -m comment -m state --sport 20 --state RELATED,ESTABLISHED -j LOGACCEPT --comment "Connect to remote FTP Server"
 -A INPUT -p tcp -m tcp -m state --dport 1024:65535 --sport 1024:65535 --state ESTABLISHED -j LOGACCEPT
 -A INPUT -p tcp -m tcp -m comment -s 91.189.89.49/32 --sport 11371 -j LOGACCEPT --comment "PGP Key Server"
 -A INPUT -p tcp -m tcp -m comment -s 91.189.90.55/32 --sport 11371 -j LOGACCEPT --comment "PGP Key Server"
@@ -71,7 +77,8 @@ COMMIT
 -A FORWARD -o ve-+ -i eth0 -j LOGACCEPT
 
 -A OUTPUT -o ve-+ -p udp --dport 67:68 --sport 67:68 -m comment --comment "Allow DHCP-Requests from Containers" -j LOGACCEPT
--A OUTPUT -p tcp -m tcp -m state -m comment --sport 22 --state ESTABLISHED -j LOGACCEPT --comment "SSH Server"
+-A OUTPUT -p tcp -m tcp -m state -m comment --sport 2222 --state ESTABLISHED -j LOGACCEPT --comment "SSH Server"
+-A OUTPUT -p tcp -m tcp -m state -m comment --dport 22 --state ESTABLISHED -j LOGACCEPT --comment "GIT SSH Server"
 -A OUTPUT -p udp -m udp -m state -m comment --dport 123 --state NEW,ESTABLISHED -j LOGACCEPT --comment "ntp client"
 -A OUTPUT -p tcp -m multiport -m state -m comment --state NEW,ESTABLISHED -j LOGACCEPT --dports 80,443 --comment Download
 -A OUTPUT -m comment -o lo -j LOGACCEPT --comment "Allow loopback"
@@ -79,6 +86,9 @@ COMMIT
 -A OUTPUT -p icmp -m icmp --icmp-type 8 -j LOGACCEPT
 -A OUTPUT -p udp -m udp -m comment --dport 53 -j LOGACCEPT --comment "Allow DNS request from this server"
 -A OUTPUT -p tcp -m tcp -m comment --dport 53 -j LOGACCEPT --comment "Allow DNS request from this server"
+-A OUTPUT -p tcp -m tcp -m state --dport 21 --state NEW,ESTABLISHED -j LOGACCEPT -m comment --comment "Connect to remote FTP Server"
+-A OUTPUT -p tcp -m tcp -m state --dport 20 --state ESTABLISHED -j LOGACCEPT -m comment --comment "Connect to remote FTP Server"
+-A OUTPUT -p tcp -m tcp -m state --dport 25 --state NEW,ESTABLISHED -j LOGACCEPT -m comment --comment "Connect to remote SMTP Server"
 -A OUTPUT -p tcp -m tcp -m comment -d 91.189.89.49/32 --dport 11371 -j LOGACCEPT --comment "PGP Key Server"
 -A OUTPUT -p tcp -m tcp -m comment -d 91.189.90.55/32 --dport 11371 -j LOGACCEPT --comment "PGP Key Server"
 
