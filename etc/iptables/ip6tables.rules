@@ -6,20 +6,28 @@
 :LOGDROP - [0:0]
 :LOGACCEPT - [0:0]
 :LOGREJECT - [0:0]
--A INPUT -p tcp -m tcp --dport 22 -j LOGACCEPT
+-A INPUT -p tcp -m tcp --dport 22 -m state --state NEW,ESTABLISHED -m comment --comment "GIT SSH Server"-j LOGACCEPT
+-A INPUT -p tcp -m tcp --dport 2222 -m state --state NEW,ESTABLISHED -m comment --comment "SSH Server"-j LOGACCEPT
 -A INPUT -p tcp -m multiport --sports 80,443 -m state --state ESTABLISHED -m comment --comment Download -j LOGACCEPT
 -A INPUT -i lo -m comment --comment "Allow loopback" -j LOGACCEPT
 -A INPUT -p udp -m udp --sport 53 -m comment --comment "Allow DNS request from this server" -j LOGACCEPT
 -A INPUT -p tcp -m tcp --sport 53 -m comment --comment "Allow DNS request from this server" -j LOGACCEPT
+-A INPUT -p tcp -m tcp --sport 21 -m state --state ESTABLISHED -m comment --comment "FTP Download" -j LOGACCEPT
+-A INPUT -p tcp -m tcp --sport 20 -m state --state RELATED,ESTABLISHED -m comment --comment "FTP Download" -j LOGACCEPT
+-A INPUT -p tcp -m tcp --sport 25 -m state --state ESTABLISHED -m comment --comment "Connect to remote SMTP Server" -j LOGACCEPT
 -A INPUT -p ipv6-icmp -m comment --comment "Allow Ping, Packet to big and so on" -m limit --limit 500/sec --limit-burst 300 -j LOGACCEPT
 
 -A FORWARD -p ipv6-icmp -m comment --comment "Allow Ping, Packet to big and so on" -j LOGACCEPT
 
--A OUTPUT -p tcp -m tcp --sport 22 -m state --state ESTABLISHED -m comment --comment "SSH Server" -j LOGACCEPT
+-A OUTPUT -p tcp -m tcp --sport 22 -m state --state ESTABLISHED -m comment --comment "GIT SSH Server" -j LOGACCEPT
+-A OUTPUT -p tcp -m tcp --sport 2222 -m state --state ESTABLISHED -m comment --comment "SSH Server" -j LOGACCEPT
 -A OUTPUT -p tcp -m multiport --dports 80,443 -m state --state NEW,ESTABLISHED -m comment --comment Download -j LOGACCEPT
 -A OUTPUT -o lo -m comment --comment "Allow loopback" -j LOGACCEPT
 -A OUTPUT -p udp -m udp --dport 53 -m comment --comment "Allow DNS request from this server" -j LOGACCEPT
 -A OUTPUT -p tcp -m tcp --dport 53 -m comment --comment "Allow DNS request from this server" -j LOGACCEPT
+-A OUTPUT -p tcp -m tcp --dport 21 -m state --state NEW,ESTABLISHED -m comment --comment "Connect to remote FTP Server" -j LOGACCEPT
+-A OUTPUT -p tcp -m tcp --dport 20 -m state --state RELATED,ESTABLISHED -m comment --comment "Connect to remote FTP Server" -j LOGACCEPT
+-A OUTPUT -p tcp -m tcp --sport 25 -m state --state NEW,ESTABLISHED -j LOGACCEPT -m comment --comment "Connect to remote SMTP Server"
 -A OUTPUT -p ipv6-icmp -m comment --comment "Allow Ping, Packet to big and so on" -m limit --limit 500/sec --limit-burst 300 -j LOGACCEPT
 
 -A INPUT -j LOGDROP
