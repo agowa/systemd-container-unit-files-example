@@ -10,4 +10,4 @@ Port=tcp:9091:9091
 #Port=tcp:22020:22
 
 [Files]
-Bind=/etc/transmission-daemon
+Bind=/etc/transmission-daemon:/srv/transmission
