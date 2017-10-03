@@ -1,0 +1,20 @@
+[Unit]
+Description=Starts Transmission within the container %i
+After=systemd-nspawn@%i.service
+Requires=systemd-nspawn@%i.service
+
+[Service]
+ExecStartPre=/bin/sleep 20
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /usr/bin/dpkg --configure -a
+
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /usr/bin/apt update
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /usr/bin/apt -yq upgrade
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /usr/bin/apt -yq dist-upgrade
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /bin/bash -c 'DEBIAN_FRONTEND=noninteractive /usr/bin/apt -yq install --no-install-recommends ca-certificates openssh-server'
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /usr/bin/apt install -yq transmission-daemon
+
+#TODO: Add ExecStart and ExecStop
+
+TimeoutSec=200
+Restart=on-failure
+#Restart=no

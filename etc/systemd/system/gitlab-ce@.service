@@ -1,0 +1,59 @@
+[Unit]
+Description=Starts GitLab within the container %i
+After=systemd-nspawn@%i.service
+Requires=systemd-nspawn@%i.service
+
+[Service]
+ExecStartPre=/bin/sleep 20
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /usr/bin/dpkg --configure -a
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /bin/bash -c 'DEBIAN_FRONTEND=noninteractive /usr/bin/apt -yq install --no-install-recommends ca-certificates openssh-server wget apt-transport-https vim nano psmisc lsb-release'
+
+# Download & Install GitLab
+# If you run GitLab Enterprise Edition point it to a location where you have downloaded it.
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /bin/bash -c 'echo "deb https://packages.gitlab.com/gitlab/gitlab-ce/debian/ `lsb_release -cs` main" > /etc/apt/sources.list.d/gitlab_gitlab-ce.list'
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /bin/bash -c 'wget -q -O - https://packages.gitlab.com/gpg.key | apt-key add -'
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /usr/bin/apt -q update
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /usr/bin/apt -yq install --no-install-recommends gitlab-ce
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /usr/bin/apt -yq upgrade
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /usr/bin/apt -yq dist-upgrade
+#ExecStartPre=/usr/bin/systemd-run --machine %i --wait /bin/systemctl disable gitlab-runsvdir.service
+#ExecStartPre=/usr/bin/systemd-run --machine %i --wait /bin/systemctl stop gitlab-runsvdir.service
+
+# Manage SSHD through runit
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /bin/mkdir -p /opt/gitlab/sv/sshd/supervise
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /bin/rm -rf /opt/gitlab/sv/sshd/supervise/ok
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /usr/bin/mkfifo /opt/gitlab/sv/sshd/supervise/ok
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /bin/bash -c 'printf "#!/bin/sh\nexec 2>&1\numask 077\nexec /usr/bin/ssh -D" > /opt/gitlab/sv/sshd/run'
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /bin/chmod a+x /opt/gitlab/sv/sshd/run
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /bin/ln -s /opt/gitlab/sv/sshd /opt/gitlab/service
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /bin/mkdir -p /var/run/sshd
+
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /bin/bash -c 'rm -f /opt/gitlab/service/*'
+
+# This could be done in an separate unit file, or just by invoking it's command directly here, so our systemd can trace it instead of the one within the container.
+#ExecStart=/usr/bin/systemctl start gitlab-runsvdir.service -M %i
+ExecStart=/usr/bin/systemd-run --machine %i --wait /opt/gitlab/embedded/bin/runsvdir-start
+
+ExecStartPost=/bin/sleep 20
+ExecStartPost=/usr/bin/systemd-run --machine %i --wait /var/lib/dpkg/info/gitlab-ce.preinst upgrade
+
+# Remove Kernel Parameters, as the limits are high enough and setting them inside the container would fail anywhay
+# This does no longer work, as now gitlab-ctl reconfigure does regenerate it and also tries to apply them.
+#ExecStartPost=/usr/bin/systemd-run --machine %i --wait /bin/rm -rf "/etc/sysctl.d/90-omnibus-gitlab-kernel.*.conf"
+# So replacing sysctl with an dummy one is our only option. Or otherwise gitlab-ctl reconfigure will just not continue
+ExecStartPost=/usr/bin/systemd-run --machine %i --wait /bin/mv /sbin/sysctl /sbin/sysctl.old
+ExecStartPost=/usr/bin/systemd-run --machine %i --wait /bin/bash -c 'printf "#!/bin/sh\nexit 0" > /sbin/sysctl'
+
+ExecStartPost=/usr/bin/systemd-run --machine %i --wait /usr/bin/gitlab-ctl reconfigure
+ExecStartPost=/usr/bin/systemd-run --machine %i --wait /usr/bin/gitlab-ctl pg-upgrade -w
+
+ExecStop=/usr/bin/systemd-run --machine %i --wait /usr/bin/gitlab-ctl stop
+ExecStopPost=/bin/sleep 10
+ExecStopPost=/usr/bin/systemd-run --machine %i --wait /bin/bash -c "/usr/bin/gitlab-ctl graceful-kill || /bin/true"
+ExecStopPost=/bin/sleep 10
+ExecStopPost=/usr/bin/systemd-run --machine %i --wait /bin/bash -c "/usr/bin/pkill -HUP runsvdir || /bin/true"
+
+
+TimeoutSec=200
+Restart=on-failure
+#Restart=no

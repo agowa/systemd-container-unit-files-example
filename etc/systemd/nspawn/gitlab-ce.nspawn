@@ -1,12 +1,13 @@
 [Exec]
 Boot=yes
+PrivateUsers=524288
 
 [Network]
-#Port=tcp:8181:80
-#Port=tcp:8443:443
+#Port=tcp:8181:8181
 Port=tcp:22:22
 
 [Files]
 Bind=/srv/gitlab-ce/config:/etc/gitlab
 Bind=/srv/gitlab-ce/logs:/var/log/gitlab
 Bind=/srv/gitlab-ce/data:/var/opt/gitlab
+PrivateUsersChown=true

@@ -1,5 +1,6 @@
 [Exec]
 Boot=yes
+PrivateUsers=589824
 
 [Network]
 Port=tcp:6881:6881
@@ -10,4 +11,8 @@ Port=tcp:9091:9091
 #Port=tcp:22020:22
 
 [Files]
-Bind=/etc/transmission-daemon:/srv/transmission
+Bind=/srv/transmission/config:/etc/transmission-daemon
+Bind=/srv/transmission/data:/mnt
+Bind=/srv/transmission/logs:/var/log/transmission
+PrivateUsersChown=true
+

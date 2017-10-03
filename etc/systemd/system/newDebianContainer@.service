@@ -6,11 +6,10 @@ After=network.target
 [Service]
 ExecStart=/usr/sbin/debootstrap --include=systemd,dbus,libpam-systemd,traceroute,ca-certificates,openssl --arch=amd64 stable /var/lib/machines/%i
 ExecStartPost=/bin/ln -s /lib/systemd/system/systemd-networkd.service /var/lib/machines/%i/etc/systemd/system/multi-user.target.wants/systemd-networkd.service
-ExecStartPost=/bin/mkdir /var/lib/machines/%i/etc/systemd/system/sockets.target.wants/systemd-networkd.socket
+ExecStartPost=/bin/mkdir -p /var/lib/machines/%i/etc/systemd/system/sockets.target.wants/systemd-networkd.socket
 ExecStartPost=/bin/mkdir -p /var/lib/machines/%i/sys/fs/selinux
 ExecStartPost=/bin/ln -s /lib/systemd/system/systemd-networkd.socket /var/lib/machines/%i/etc/systemd/system/sockets.target.wants/systemd-networkd.socket
 Type=oneshot
 KillMode=process
 TimeoutSec=infinity
 RemainAfterExit=yes
-
