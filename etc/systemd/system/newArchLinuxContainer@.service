@@ -1,0 +1,15 @@
+[Unit]
+Description=Installs the ArchLinux nspawn container for %i
+ConditionPathExists=|!/var/lib/machines/%i
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/pacstrap -cd /var/lib/machines/%i base
+ExecStartPost=/bin/mkdir -p /var/lib/machines/%i/sys/fs/selinux
+ExecStartPost=/usr/bin/systemctl --root=/var/lib/machines/%i enable systemd-networkd.service
+ExecStartPost=/usr/bin/systemctl --root=/var/lib/machines/%i enable systemd-resolved.service
+
+Type=oneshot
+KillMode=process
+TimeoutSec=infinity
+RemainAfterExit=yes
