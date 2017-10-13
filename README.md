@@ -6,7 +6,7 @@ Example for using systemd container together with unit files for automatic deplo
 |Container|Status|
 |-----|-----|
 |GitLab|done|
-|Transmission|untested, separate from nspawn unit|
+|Transmission|untested, missing start/stop action|
 |Nginx|tbd|
 |Minecraft|tbd|
 
@@ -48,4 +48,6 @@ b) they are custom ones I wrote and at least one container depends on them (fill
 |Logrotate Transmission Rules|||tbd|
 |Logrotate Nginx Rules|||tbd|
 |Logrotate Minecraft|||tbd|
+|Debian Bootstrap Unit|Systemd Unit to bootstrap a new Debian container|agowa338|done|
+|ArchLinux Bootstrap Unit|Systemd Unit to bootstrap a new ArchLinux container|agowa338|done|
 |Move to Ansible|Because Ansible!||tbd|
