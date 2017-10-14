@@ -20,6 +20,8 @@ There are enough ids for 28664 containers.
 |Host|0|524287|1-8|
 |GitLab|524288|589823|9|
 |Transmission|589824|655359|10|
+|Mariadb|655360|720895|11|
+|Nginx|720896|786431|12|
 |...|1878982656|1879048191|28672|
 
 ## Asumptions

@@ -1,0 +1,37 @@
+[Unit]
+Requires=systemd-nspawn@%i.service
+After=systemd-nspawn@%i.service
+
+[Service]
+EnvironmentFile=/srv/%i/settings.conf
+ExecStartPre=/bin/sleep 20
+
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /usr/bin/dpkg --configure -a
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /usr/bin/apt -q update
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /usr/bin/apt -yq upgrade
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /usr/bin/apt -yq dist-upgrade
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /usr/bin/apt -yq install openssh-server
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /usr/bin/apt -yq -o Dpkg::Options::=--force-confdef -o Dpkg::options=--force-confold install nginx-full geoip-bin nginx-doc
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /usr/bin/apt -yq install php7.0-fpm php7.0-common php7.0-mysqlnd php7.0-xmlrpc php7.0-curl php7.0-gd php7.0-imagick php7.0-cli php7.0-mcrypt
+ExecStartPre=/usr/bin/systemctl disable --machine=%i nginx.service php7.0-fpm.service
+ExecStartPre=/usr/bin/systemctl stop --machine=%i nginx.service php7.0-fpm.service
+ExecStartPre=/bin/sed 's/post_max_size = 8M/post_max_size = 128M/' /var/lib/machines/%i/etc/php/7.0/fpm/php.ini
+ExecStartPre=/bin/sed 's/upload_max_filesize = 2M/upload_max_filesize = 5G/' /var/lib/machines/%i/etc/php/7.0/fpm/php.ini
+ExecStartPre=/bin/sed 's/memory_limit = 128M/memory_limit = 512M/' /var/lib/machines/%i/etc/php/7.0/fpm/php.ini
+#ExecStartPre=/usr/bin/systemd-run --machine %i --wait /bin/bash -c 'echo "mariadb-server-10.0 mysql-server/root_password password ${MARIADB_PASSWORD}" | /usr/bin/debconf-set-selections'
+#ExecStartPre=/usr/bin/systemd-run --machine %i --wait /bin/bash -c 'echo "mariadb-server-10.0 mysql-server/root_password_again password ${MARIADB_PASSWORD}" | /usr/bin/debconf-set-selections'
+#ExecStartPre=/usr/bin/systemd-run --machine %i --wait /bin/bash -c 'DEBIAN_FRONTEND=noninteractive /usr/bin/apt install -yq mariadb-server'
+#ExecStartPre=/usr/bin/systemd-run --machine %i --wait /bin/bash -c "mkdir -p /etc/mysql/conf.d"
+#ExecStartPre=/usr/bin/systemd-run --machine %i --wait /bin/bash -c "echo '[mysqld]\nskip-host-cache\nskip-name-resolve' > /etc/mysql/conf.d/docker.cnf"
+
+ExecStartPre=/usr/bin/systemctl start --machine=%i php7.0-fpm.service
+ExecStart=/usr/bin/systemctl start --wait --machine=%i nginx.service
+
+ExecStop=/usr/bin/systemctl stop --machine=%i nginx.service
+ExecStopPost=/usr/bin/systemctl stop --machine=%i php7.0-fpm.service
+
+
+#LimitNOFILE=8192:16384
+#LimitNPROC=16384:48028
+
+TimeoutSec=infinity

@@ -1,0 +1,17 @@
+[Exec]
+Boot=yes
+PrivateUsers=720896
+# Uses 65536 IDs
+
+[Network]
+Port=tcp:80:80
+Port=tcp:443:443
+
+[Files]
+Bind=/srv/nginx/config:/etc/nginx
+Bind=/srv/nginx/logs:/var/log/nginx
+Bind=/srv/nginx/data:/var/www
+Bind=/srv/nginx/database:/var/lib/mysql
+OverlayReadOnly=+/etc/ssl:/srv/nginx/ssl:/etc/ssl
+PrivateUsersChown=true
+
