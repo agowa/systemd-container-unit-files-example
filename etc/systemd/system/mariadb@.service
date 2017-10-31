@@ -1,0 +1,50 @@
+[Unit]
+Requires=systemd-nspawn@%i.service
+After=systemd-nspawn@%i.service
+
+[Service]
+EnvironmentFile=/srv/%i/settings.conf
+ExecStartPre=/bin/sleep 20
+ExecStartPre=/bin/iptables -I FORWARD -i eth0 -o ve-mariadb -p tcp -m tcp --dport 3306 -j LOGDROP
+ExecStartPost=/bin/iptables -I FORWARD -i ve-+ -o ve-%i -p tcp -m tcp --dport 3306 -j LOGACCEPT
+ExecStartPost=/bin/iptables -I FORWARD -i ve-%i -o ve-+ -p tcp -m tcp --sport 3306 -j LOGACCEPT
+
+#ExecStartPre=/usr/bin/systemd-run --machine %i --wait /bin/bash -c "echo '[Match]\nName=vz-%i2DB\n\n[Network]\nDHCP=yes' > /etc/systemd/network/10-vz-%i2DB.network"
+ExecStartPre=/usr/bin/systemctl restart --wait --machine=%i systemd-networkd.service
+
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /usr/bin/dpkg --configure -a
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /usr/bin/apt -q update
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /usr/bin/apt -yq upgrade
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /usr/bin/apt -yq dist-upgrade
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /usr/bin/apt -yq install openssh-server
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /usr/bin/apt -yq install mariadb-server
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /bin/bash -c 'echo "mariadb-server-10.0 mysql-server/root_password password ${MARIADB_PASSWORD}" | /usr/bin/debconf-set-selections'
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /bin/bash -c 'echo "mariadb-server-10.0 mysql-server/root_password_again password ${MARIADB_PASSWORD}" | /usr/bin/debconf-set-selections'
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /bin/bash -c 'DEBIAN_FRONTEND=noninteractive /usr/bin/apt install -yq mariadb-server'
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /bin/bash -c "mkdir -p /etc/mysql/conf.d"
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /bin/bash -c "echo '[mysqld]\nskip-host-cache\nskip-name-resolve' > /etc/mysql/conf.d/container.cnf"
+ExecStartPre=/usr/bin/systemctl disable --now --machine=%i mariadb.service
+ExecStartPre=/usr/bin/systemctl disable --now --machine=%i mysql.service
+ExecStartPre=/usr/bin/systemd-run --machine %i --wait /lib/systemd/systemd-sysv-install disable mysql
+
+ExecStart=/usr/bin/systemctl start --wait --machine=%i mariadb.service
+
+# Run mysql_secure_installation manually (every command of it is run separately)
+##ExecStartPost=/usr/bin/systemd-run --machine %i --wait /usr/bin/mysqladmin -u root password "${MARIADB_PASSWORD}"
+##ExecStartPost=/usr/bin/systemd-run --machine %i --wait /usr/bin/mysql -e "UPDATE mysql.user SET Password=PASSWORD('${MARIADB_PASSWORD}') WHERE User='root'"
+#ExecStartPost=/usr/bin/systemd-run --machine %i --wait /usr/bin/mysql -e 'UPDATE mysql.user SET plugin="unix_socket" WHERE User="root"'
+#ExecStartPost=/usr/bin/systemd-run --machine %i --wait /usr/bin/mysql -e 'DELETE FROM mysql.user WHERE User="root" AND Host NOT IN ("localhost", "127.0.0.1", "::1")'
+#ExecStartPost=/usr/bin/systemd-run --machine %i --wait /usr/bin/mysql -e 'DELETE FROM mysql.user WHERE User=""'
+#ExecStartPost=/usr/bin/systemd-run --machine %i --wait /usr/bin/mysql -e 'DELETE FROM mysql.db WHERE Db="test" OR Db='test\_%''
+#ExecStartPost=/usr/bin/systemd-run --machine %i --wait /usr/bin/mysql -e 'FLUSH PRIVILEGES'
+
+ExecStop=/usr/bin/systemctl stop --machine=%i mariadb.service
+
+ExecStopPost=/bin/iptables -D FORWARD -i eth0 -o ve-mariadb -p tcp -m tcp --dport 3306 -j LOGDROP
+ExecStopPost=/bin/iptables -D FORWARD -i ve-+ -o ve-%i -p tcp -m tcp --dport 3306 -j LOGACCEPT
+ExecStopPost=/bin/iptables -D FORWARD -i ve-%i -o ve-+ -p tcp -m tcp --sport 3306 -j LOGACCEPT
+
+#LimitNOFILE=8192:16384
+#LimitNPROC=16384:48028
+
+TimeoutSec=infinity
