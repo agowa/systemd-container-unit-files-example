@@ -48,3 +48,7 @@ ExecStopPost=/bin/iptables -D FORWARD -i ve-%i -o ve-+ -p tcp -m tcp --sport 330
 #LimitNPROC=16384:48028
 
 TimeoutSec=infinity
+
+[Install]
+WantedBy=machines.target
+DefaultInstance=mariadb

@@ -13,3 +13,6 @@ Type=oneshot
 KillMode=process
 TimeoutSec=infinity
 RemainAfterExit=yes
+
+[Install]
+WantedBy=machines.target

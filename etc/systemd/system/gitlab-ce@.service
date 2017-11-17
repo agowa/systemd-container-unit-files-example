@@ -57,3 +57,7 @@ ExecStopPost=/usr/bin/systemd-run --machine %i --wait /bin/bash -c "/usr/bin/pki
 TimeoutSec=200
 Restart=on-failure
 #Restart=no
+
+[Install]
+WantedBy=machines.target
+DefaultInstance=gitlab-ce
